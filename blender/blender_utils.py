@@ -67,11 +67,11 @@ def get_3x4_RT_matrix_from_blender(camera):
 
     # Convert camera location to translation vector used in coordinate changes
     # Use location from matrix_world to account for constraints:
-    T_world2bcam = -1 * R_world2bcam * location
+    T_world2bcam = -1 * R_world2bcam @ location
 
     # Build the coordinate transform matrix from world to computer vision camera
-    R_world2cv = R_bcam2cv * R_world2bcam
-    T_world2cv = R_bcam2cv * T_world2bcam
+    R_world2cv = R_bcam2cv @ R_world2bcam
+    T_world2cv = R_bcam2cv @ T_world2bcam
 
     # put into 3x4 matrix
     RT = Matrix((R_world2cv[0][:] + (T_world2cv[0],),

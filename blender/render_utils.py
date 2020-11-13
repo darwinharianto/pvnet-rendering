@@ -82,7 +82,7 @@ class DataStatistics(object):
             translations.append(pose[:, 3])
 
         eulers = np.array(eulers)
-        translations = np.array(translations)
+        translations = np.array(translations)*5
         np.save(self.dataset_poses_path, np.concatenate([eulers, translations], axis=-1))
 
         return eulers, translations
