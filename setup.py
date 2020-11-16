@@ -36,3 +36,7 @@ setup(
     ],
     python_requires='>=3.7'
 )
+
+# Build fps
+import os
+os.system(f'pushd .; cd pvnet_rendering/csrc/fps; python setup.py build_ext --inplace; popd')
