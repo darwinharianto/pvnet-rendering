@@ -8,7 +8,7 @@ renderer = Renderer(
     bg_img_dir='/home/clayton/workspace/prj/data_keep/data/misc_dataset/COCO/train2017',
     data_dir='data1',
     renders_dir='renders1',
-    obj_path='/home/clayton/workspace/prj/data_keep/data/misc_dataset/new/hsr_ply/orig_hsr.ply',
+    obj_path='/home/clayton/workspace/prj/data_keep/data/misc_dataset/new/hsr_ply/fixed_hsr.ply',
     poses_path='poses.npy'
 )
 renderer.run()

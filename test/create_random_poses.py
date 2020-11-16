@@ -22,9 +22,14 @@ def get_random_pose(roll_range: (float, float)=(-math.pi, math.pi), pitch_range:
 poses = []
 
 for i in range(cfg.NUM_SYN):
-    x, y, z = get_random_translation(r_range=(1,10), theta_range=(-math.pi/6, math.pi/6), azi_range=(-math.pi/6, math.pi/6))
-    roll, pitch, yaw = get_random_pose(roll_range=(-math.pi, math.pi), pitch_range=(-math.pi, math.pi), yaw_range=(-math.pi, math.pi))
-    pose = [roll*180/math.pi, pitch*180/math.pi, yaw*180/math.pi, x, y, z]
+    x, y, z = get_random_translation(r_range=(1.5,4), theta_range=(-math.pi/36, math.pi/36), azi_range=(-math.pi/36, math.pi/36))
+    roll, pitch, yaw = get_random_pose(roll_range=(-math.pi/36, math.pi/36), pitch_range=(-math.pi/36, math.pi/36), yaw_range=(-math.pi, math.pi))
+    pose = [yaw*180/math.pi, pitch*180/math.pi, roll*180/math.pi, x, y, z]
     poses.append(pose)
 poses = np.array(poses)
 np.save('poses.npy', poses)
+
+# yaw (about y-axis)
+# pitch (about x-axis)
+# roll (about z-axis)
+# I feel like the ranges still don't match up 💦 I will have to figure out what's going on later.

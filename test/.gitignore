@@ -2,3 +2,5 @@
 *.jpg
 *.pkl
 *.npy
+renders*
+data*
