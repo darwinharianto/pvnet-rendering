@@ -136,7 +136,8 @@ class Renderer(object):
         bg_img_dir: str,
         data_dir: str=None,
         renders_dir: str=None,
-        obj_path: str=None
+        obj_path: str=None,
+        poses_path: str=None
     ):
         self.class_type = class_type
         self.bg_img_dir = bg_img_dir
@@ -151,7 +152,7 @@ class Renderer(object):
         # Saved to data_dir
         self.bg_imgs_path = os.path.join(self.data_dir, 'bg_imgs.npy')
         delete_file_if_exists(self.bg_imgs_path)
-        self.poses_path = os.path.join(self.data_dir, 'blender_poses', '{}_poses.npy').format(class_type)
+        self.poses_path = os.path.join(self.data_dir, 'blender_poses', '{}_poses.npy').format(class_type) if poses_path is None else poses_path
         self.blank_blend = f'{cfg.ROOT_DIR}/data/blank.blend'
         self.plane_height_path = os.path.join(self.data_dir, 'plane_height.pkl')
 
