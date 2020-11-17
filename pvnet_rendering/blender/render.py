@@ -1,5 +1,5 @@
 from ..config import cfg
-from ..util.base_utils import PoseTransformer, read_pose, read_pickle, save_pickle
+from .base_utils import PoseTransformer, read_pose, read_pickle, save_pickle
 import os
 import numpy as np
 from transforms3d.quaternions import mat2quat
@@ -134,14 +134,12 @@ class Renderer(object):
     def __init__(
         self, class_type: str,
         bg_img_dir: str,
-        data_dir: str=None,
         renders_dir: str=None,
         obj_path: str=None,
         poses_path: str=None
     ):
         self.class_type = class_type
         self.bg_img_dir = bg_img_dir
-        self.data_dir = cfg.DATA_DIR if data_dir is None else data_dir
         self.renders_dir = f'{cfg.LINEMOD}/renders' if renders_dir is None else renders_dir
         self.obj_path = os.path.join(cfg.LINEMOD,'{}/{}.ply').format(class_type, class_type) if obj_path is None else obj_path
         
@@ -149,16 +147,14 @@ class Renderer(object):
         self.blender_path = cfg.BLENDER_PATH
         self.py_path = os.path.join(cfg.BLENDER_DIR, 'render_backend.py')
 
-        # Saved to data_dir
-        self.bg_imgs_path = os.path.join(self.data_dir, 'bg_imgs.npy')
-        delete_file_if_exists(self.bg_imgs_path)
-        self.poses_path = os.path.join(self.data_dir, 'blender_poses', '{}_poses.npy').format(class_type) if poses_path is None else poses_path
-        self.blank_blend = f'{cfg.ROOT_DIR}/data/blank.blend'
-        self.plane_height_path = os.path.join(self.data_dir, 'plane_height.pkl')
-
         # Saved to renders_dir
         self.output_dir_path = f'{self.renders_dir}/{class_type}'
         delete_dir_if_exists(self.output_dir_path)
+        self.bg_imgs_path = f'{self.output_dir_path}/bg_imgs.npy'
+        delete_file_if_exists(self.bg_imgs_path)
+        self.poses_path = poses_path
+        self.blank_blend = f'{cfg.ROOT_DIR}/data/blank.blend'
+        self.plane_height_path = f'{self.output_dir_path}/plane_height.pkl'
 
     def get_bg_imgs(self):
         if os.path.exists(self.bg_imgs_path):

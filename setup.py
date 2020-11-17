@@ -32,7 +32,7 @@ setup(
         'plyfile',
         'transforms3d',
         'scikit-image',
-        'pyclay-annotation_utils'
+        'pyclay-annotation_utils @ https://github.com/cm107/annotation_utils/archive/development.zip'
     ],
     python_requires='>=3.7'
 )

@@ -14,6 +14,7 @@ def read_linemod_mask(path):
 
 for depth_path in depth_paths:
     depth_img = read_linemod_mask(depth_path)
+    print(f'depth_img.shape: {depth_img.shape}')
     print(depth_img.max())
     quit_flag = cv_simple_image_viewer(depth_img, preview_width=1000)
     if quit_flag:
