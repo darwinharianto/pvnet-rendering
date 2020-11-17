@@ -3,5 +3,6 @@
 *.pkl
 *.npy
 *.txt
+*.json
 renders*
 data*

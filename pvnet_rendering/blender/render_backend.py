@@ -16,7 +16,7 @@ sys.path.append(UTILS_DIR)
 sys.path.append(LIB_DIR)
 sys.path.append(ROOT_DIR)
 
-from pvnet_rendering.config import cfg
+from pvnet_rendering.config.loadable_config import PVNet_Config
 from blender_utils import get_K_P_from_blender, get_3x4_P_matrix_from_blender
 import pickle
 import time
@@ -42,6 +42,8 @@ def parse_argument():
                         help='In-plane rotation angle of camera.')
     parser.add_argument('--height', type=float, default=0.0,
                         help='Location z of plane.')
+    parser.add_argument('--cfg_path', type=str, required=True, help='Path to config file.')
+    parser.add_argument('--material_path', type=str, required=True, help='Path to material of input.')
 
     argv = sys.argv[sys.argv.index("--") + 1:]
     args = parser.parse_args(argv)
@@ -95,14 +97,14 @@ def setup_light(scene):
     bpy.context.collection.objects.link(nihonbashi_lamp)
 
 
-def setup():
+def setup(cfg: PVNet_Config):
     bpy.ops.object.select_all(action='TOGGLE')
     camera = bpy.data.objects['Camera']
     bpy.data.cameras['Camera'].clip_end = 10000
 
     # configure rendered image's parameters
-    bpy.context.scene.render.resolution_x = cfg.WIDTH
-    bpy.context.scene.render.resolution_y = cfg.HEIGHT
+    bpy.context.scene.render.resolution_x = cfg.width
+    bpy.context.scene.render.resolution_y = cfg.height
     bpy.context.scene.render.resolution_percentage = 100
 #    bpy.context.scene.render.alpha_mode = 'TRANSPARENT'
     bpy.context.scene.render.image_settings.color_mode = 'RGBA'
@@ -131,8 +133,8 @@ def setup():
     depth_file_output.format.color_depth = '32'
 
     map_node = tree.nodes.new(type="CompositorNodeMapRange")
-    map_node.inputs[1].default_value = cfg.MIN_DEPTH
-    map_node.inputs[2].default_value = cfg.MAX_DEPTH
+    map_node.inputs[1].default_value = cfg.min_depth
+    map_node.inputs[2].default_value = cfg.max_depth
     map_node.inputs[3].default_value = 0
     map_node.inputs[4].default_value = 1
     links.new(rl.outputs['Depth'], map_node.inputs[0])
@@ -235,7 +237,7 @@ def obj_centened_camera_pos(dist, azimuth_deg, elevation_deg):
     return x, y, z
 
 
-def render(camera, outfile, pose):
+def render(camera, outfile, pose, cfg: PVNet_Config):
     bpy.context.scene.render.filepath = outfile
     depth_file_output.file_slots[0].path = bpy.context.scene.render.filepath + '_depth.png'
 
@@ -269,7 +271,7 @@ def add_shader_on_world():
     bpy.data.worlds['World'].node_tree.links.new(env_node.outputs['Color'], back_node.inputs['Color'])
 
 
-def add_shader_on_ply_object(obj):
+def add_shader_on_ply_object(obj, args):
     bpy.ops.material.new()
     material = list(bpy.data.materials)[0]
 
@@ -289,7 +291,7 @@ def add_shader_on_ply_object(obj):
 
 
     material.node_tree.links.new(image_node.outputs['Color'], diffuse_node.inputs['Base Color'])
-    img_path = cfg.MATERIAL_PATH
+    img_path = args.material_path
     img_name = os.path.basename(img_path)
     bpy.data.images.load(img_path)
     image_node.image = bpy.data.images[img_name]
@@ -357,7 +359,7 @@ def set_material_node_parameters(material):
         nodes['Diffuse BSDF'].inputs['Roughness'].default_value = np.random.uniform(0, 1)
 
 
-def batch_render_with_linemod(args, camera):
+def batch_render_with_linemod(args, camera, cfg: PVNet_Config):
     os.system('mkdir -p {}'.format(args.output_dir))
     bpy.ops.import_mesh.ply(filepath=args.input)
     object = bpy.data.objects[os.path.basename(args.input).replace('.ply', '')]
@@ -377,7 +379,7 @@ def batch_render_with_linemod(args, camera):
 
     add_shader_on_world()
 
-    material = add_shader_on_ply_object(object)
+    material = add_shader_on_ply_object(object, args)
     # add a plane under the object
     # bpy.ops.mesh.primitive_plane_add()
     # plane = bpy.data.objects['Plane']
@@ -385,10 +387,10 @@ def batch_render_with_linemod(args, camera):
     # plane.scale = [0.28, 0.28, 0.28]
     # add_shader_on_plane(plane)
     bg_imgs = np.load(args.bg_imgs).astype(np.str)
-    bg_imgs = np.random.choice(bg_imgs, size=cfg.NUM_SYN)
+    bg_imgs = np.random.choice(bg_imgs, size=cfg.num_syn)
     poses = np.load(args.poses_path)
     begin_num_imgs = len(glob.glob(os.path.join(args.output_dir, '*.jpg')))
-    for i in range(0, cfg.NUM_SYN):
+    for i in range(0, cfg.num_syn):
         # overlay an background image and place the object
         img_name = os.path.basename(bg_imgs[i])
         bpy.data.images.load(bg_imgs[i])
@@ -398,7 +400,7 @@ def batch_render_with_linemod(args, camera):
         x, y = 0, 0
         object.location = [x, y, 0]
         set_material_node_parameters(material)
-        render(camera, '{}/{}'.format(args.output_dir, i), pose)
+        render(camera, '{}/{}'.format(args.output_dir, i), pose, cfg)
         object_to_world_pose = np.array([[1, 0, 0, x],
                                          [0, 1, 0, y],
                                          [0, 0, 1, 0]])
@@ -411,7 +413,7 @@ def batch_render_with_linemod(args, camera):
         bpy.data.images.remove(bpy.data.images[img_name])
 
 
-def batch_render_ycb(args, camera):
+def batch_render_ycb(args, camera, cfg: PVNet_Config):
     os.system('mkdir -p {}'.format(args.output_dir))
     bpy.ops.import_scene.obj(filepath=args.input)
     object = list(bpy.data.objects)[-1]
@@ -440,10 +442,10 @@ def batch_render_ycb(args, camera):
     # add_shader_on_plane(plane)
 
     bg_imgs = np.load(args.bg_imgs).astype(np.str)
-    bg_imgs = np.random.choice(bg_imgs, size=cfg.NUM_SYN)
+    bg_imgs = np.random.choice(bg_imgs, size=cfg.num_syn)
     poses = np.load(args.poses_path)
     begin_num_imgs = len(glob.glob(os.path.join(args.output_dir, '*.jpg')))
-    for i in range(begin_num_imgs, cfg.NUM_SYN):
+    for i in range(begin_num_imgs, cfg.num_syn):
         # overlay an background image and place the object
         img_name = os.path.basename(bg_imgs[i])
         bpy.data.images.load(bg_imgs[i])
@@ -469,64 +471,14 @@ def batch_render_ycb(args, camera):
             pickle.dump({'RT': world_to_camera_pose, 'K': KRT['K']}, f)
         bpy.data.images.remove(bpy.data.images[img_name])
 
-def main_run(
-    input: str='./doc/car/models/model_normalized.obj',
-    output_dir: str='/tmp',
-    bg_imgs: str='/tmp',
-    poses_path: str='/tmp',
-    use_cycles: bool=False,
-    azi: float=0.0,
-    ele: float=0.0,
-    theta: float=0.0,
-    height: float=0.0
-):
-    """Renders given obj file by rotation a camera around it.
-
-    Args:
-        input (str, optional):
-            The cad model to be rendered.
-            Defaults to './doc/car/models/model_normalized.obj'.
-        output_dir (str, optional):
-            The directory of the output 2d image.
-            Defaults to '/tmp'.
-        bg_imgs (str, optional):
-            Names of background images stored in a .npy file.
-            Defaults to '/tmp'.
-        poses_path (str, optional):
-            6d poses(azimuth, euler, theta, x, y, z) stored in a .npy file.
-            Defaults to '/tmp'.
-        use_cycles (bool, optional):
-            Decide whether to use cycles render or not.
-            Defaults to False.
-        azi (float, optional):
-            Azimuth of camera.
-            Defaults to 0.0.
-        ele (float, optional):
-            Elevation of camera.
-            Defaults to 0.0.
-        theta (float, optional):
-            In-plane rotation angle of camera.
-            Defaults to 0.0.
-        height (float, optional):
-            Location z of plane.
-            Defaults to 0.0.
-    """
-    begin = time.time()
-    args = parse_argument()
-    camera, depth_file_output = setup()
-    if os.path.basename(args.input).endswith('.ply'):
-        batch_render_with_linemod(args, camera)
-    else:
-        batch_render_ycb(args, camera)
-    print('cost {} s'.format(time.time() - begin))
-
 if __name__ == '__main__':
     begin = time.time()
     args = parse_argument()
-    camera, depth_file_output = setup()
+    cfg = PVNet_Config.load_from_path(args.cfg_path)
+    camera, depth_file_output = setup(cfg)
     if os.path.basename(args.input).endswith('.ply'):
-        batch_render_with_linemod(args, camera)
+        batch_render_with_linemod(args, camera, cfg)
     else:
-        batch_render_ycb(args, camera)
+        batch_render_ycb(args, camera, cfg)
     print('cost {} s'.format(time.time() - begin))
 

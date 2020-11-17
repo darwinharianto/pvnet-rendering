@@ -1,4 +1,4 @@
-from ..config import cfg
+from ..config.loadable_config import PVNet_Config
 from .base_utils import PoseTransformer, read_pose, read_pickle, save_pickle
 import os
 import numpy as np
@@ -132,28 +132,30 @@ class Renderer(object):
     }
 
     def __init__(
-        self, class_type: str,
+        self,
         bg_img_dir: str,
-        renders_dir: str=None,
-        obj_path: str=None,
-        poses_path: str=None
+        renders_dir: str,
+        obj_path: str,
+        material_path: str,
+        poses_path: str,
+        cfg: PVNet_Config
     ):
-        self.class_type = class_type
         self.bg_img_dir = bg_img_dir
-        self.renders_dir = f'{cfg.LINEMOD}/renders' if renders_dir is None else renders_dir
-        self.obj_path = os.path.join(cfg.LINEMOD,'{}/{}.ply').format(class_type, class_type) if obj_path is None else obj_path
+        self.renders_dir = renders_dir
+        self.obj_path = obj_path
+        self.material_path = material_path
         
         # Blender Related
-        self.blender_path = cfg.BLENDER_PATH
-        self.py_path = os.path.join(cfg.BLENDER_DIR, 'render_backend.py')
+        self.blender_path = cfg.blender_path
+        self.py_path = os.path.join(cfg.blender_dir, 'render_backend.py')
 
         # Saved to renders_dir
-        self.output_dir_path = f'{self.renders_dir}/{class_type}'
-        delete_dir_if_exists(self.output_dir_path)
+        self.output_dir_path = self.renders_dir
+        # delete_dir_if_exists(self.output_dir_path)
         self.bg_imgs_path = f'{self.output_dir_path}/bg_imgs.npy'
         delete_file_if_exists(self.bg_imgs_path)
         self.poses_path = poses_path
-        self.blank_blend = f'{cfg.ROOT_DIR}/data/blank.blend'
+        self.blank_blend = f'{cfg.root_dir}/data/blank.blend'
         self.plane_height_path = f'{self.output_dir_path}/plane_height.pkl'
 
     def get_bg_imgs(self):
@@ -165,10 +167,6 @@ class Renderer(object):
         bg_imgs = []
 
         for img_path in img_paths:
-            # img = Image.open(img_path)
-            # row, col = img.size
-            # if row > 500 and col > 500:
-            #     bg_imgs.append(img_path)
             bg_imgs.append(img_path)
 
         np.save(self.bg_imgs_path, bg_imgs)
@@ -196,27 +194,7 @@ class Renderer(object):
         exr_image.close()
         os.system('rm {}'.format(exr_path))
 
-    def sample_poses(self):
-        statistician = DataStatistics(self.class_type)
-        statistician.sample_poses()
-
-    def get_plane_height(self):
-        if os.path.exists(self.plane_height_path):
-            plane_height = read_pickle(self.plane_height_path)
-        else:
-            plane_height = {}
-
-        if self.class_type in plane_height:
-            return plane_height[self.class_type]
-        else:
-            pose_transformer = PoseTransformer(self.class_type)
-            model = pose_transformer.get_blender_model()
-            height = np.min(model[:, -1])
-            plane_height[self.class_type] = height
-            save_pickle(plane_height, self.plane_height_path)
-            return height
-
-    def run(self):
+    def run(self, cfg_path: str):
         """ Render images
         1. prepare background images
         2. sample poses from the pose distribution of training data
@@ -228,22 +206,22 @@ class Renderer(object):
         if not os.path.exists(self.output_dir_path):
             os.makedirs(self.output_dir_path)
 
-        os.system('{} {} --background --python {} -- --input {} --output_dir {} --bg_imgs {} --poses_path {}'.
+        os.system('{} {} --background --python {} -- --input {} --output_dir {} --bg_imgs {} --poses_path {} --cfg_path {} --material_path {}'.
                   format(self.blender_path, self.blank_blend, self.py_path, self.obj_path,
-                         self.output_dir_path, self.bg_imgs_path, self.poses_path))
+                         self.output_dir_path, self.bg_imgs_path, self.poses_path, cfg_path, self.material_path))
         depth_paths = glob.glob(os.path.join(self.output_dir_path, '*.exr'))
         for depth_path in depth_paths:
             self.exr_to_png(depth_path)
 
-    @staticmethod
-    def multi_thread_render():
-        # objects = ['ape', 'benchvise', 'bowl', 'can', 'cat', 'cup', 'driller', 'duck',
-        #            'glue', 'holepuncher', 'iron', 'lamp', 'phone', 'cam', 'eggbox']
-        objects = ['lamp', 'phone']
+    # @staticmethod
+    # def multi_thread_render():
+    #     # objects = ['ape', 'benchvise', 'bowl', 'can', 'cat', 'cup', 'driller', 'duck',
+    #     #            'glue', 'holepuncher', 'iron', 'lamp', 'phone', 'cam', 'eggbox']
+    #     objects = ['lamp', 'phone']
 
-        def render(class_type):
-            renderer = Renderer(class_type)
-            renderer.run()
+    #     def render(class_type):
+    #         renderer = Renderer(class_type)
+    #         renderer.run()
 
-        with Pool(processes=2) as pool:
-            pool.map(render, objects)
+    #     with Pool(processes=2) as pool:
+    #         pool.map(render, objects)

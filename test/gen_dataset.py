@@ -1,30 +1,21 @@
-from typing import cast
-from pvnet_rendering.config import cfg
-from pvnet_rendering.blender.render import Renderer
-from common_utils.file_utils import delete_dir_if_exists, make_dir_if_not_exists
+import math
+from pvnet_rendering.blender.dataset_maker import DatasetMaker
+from pvnet_rendering.config.loadable_config import PVNet_Config
 
-raise NotImplementedError('Still a work in progress.')
-
-class DatasetMaker:
-    def __init__(self, dst_dir: str, blender_path: str):
-        self.dst_dir = dst_dir
-        cfg.BLENDER_PATH = blender_path
-        self.renderer = cast(Renderer, None)
-
-    def init_dst_dir(self):
-        delete_dir_if_exists(self.dst_dir)
-        make_dir_if_not_exists(self.dst_dir)
-    
-    def run(self):
-        self.init_dst_dir()
-
-cfg.BLENDER_PATH = '/home/clayton/Documents/blender-2.83.9-linux64/blender'
-
-renderer = Renderer(
-    class_type='hsr',
-    bg_img_dir='/home/clayton/workspace/prj/data_keep/data/misc_dataset/COCO/train2017',
-    renders_dir='renders1',
-    obj_path='/home/clayton/workspace/prj/data_keep/data/misc_dataset/new/hsr_ply/fixed_hsr.ply',
-    poses_path='poses.npy'
+worker = DatasetMaker(
+    dst_dir='renders1',
+    cfg=PVNet_Config(
+        blender_path='/home/clayton/Documents/blender-2.83.9-linux64/blender',
+        num_syn=10,
+        width=640, height=480
+    )
 )
-renderer.run()
+worker.run(
+    ply_path='/home/clayton/workspace/prj/data_keep/data/misc_dataset/new/hsr_ply/orig_hsr.ply',
+    material_path='/home/clayton/workspace/prj/data_keep/data/misc_dataset/new/hsr_ply/hsr_material.001.jpg',
+    bg_img_dir='/home/clayton/workspace/prj/data_keep/data/misc_dataset/COCO/train2017',
+    class_name='hsr',
+    num_keypoints=8,
+    r_range=(1, 10),
+    yaw_range=(-math.pi, math.pi)
+)
