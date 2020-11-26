@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from common_utils.path_utils import get_all_files_of_extension
-from common_utils.cv_drawing_utils import cv_simple_image_viewer
+from streamer.cv_viewer import cv_simple_image_viewer
 
 renders_dir = 'renders0/hsr'
 

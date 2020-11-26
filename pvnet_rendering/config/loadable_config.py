@@ -18,6 +18,7 @@ class PVNet_Config(BasicLoadableObject['PVNet_Config']):
         fx: float=None, fy: float=None,
         cx: float=None, cy: float=None
     ):
+        super().__init__()
         # Path Parameters
         if root_dir is None:
             self.config_dir = os.path.dirname(f'{os.path.abspath(__file__)}')

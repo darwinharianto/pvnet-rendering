@@ -21,7 +21,7 @@ from blender_utils import get_K_P_from_blender, get_3x4_P_matrix_from_blender
 import pickle
 import time
 
-
+# TODO: To handle multiple objects, I think that the ply path and material path should be passed through a separate config.
 def parse_argument():
     parser = argparse.ArgumentParser(description='Renders given obj file by rotation a camera around it.')
     parser.add_argument('--input', type=str, default='./doc/car/models/model_normalized.obj',
