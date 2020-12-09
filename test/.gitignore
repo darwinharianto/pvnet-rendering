@@ -6,3 +6,5 @@
 *.json
 renders*
 data*
+*.avi
+*.mp4

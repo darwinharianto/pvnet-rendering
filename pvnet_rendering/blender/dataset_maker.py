@@ -45,7 +45,8 @@ class DatasetMaker:
         azi_range: (float, float)=(-math.pi/3, math.pi/3),
         roll_range: (float, float)=(-math.pi, math.pi),
         pitch_range: (float, float)=(-math.pi, math.pi),
-        yaw_range: (float, float)=(-math.pi, math.pi)
+        yaw_range: (float, float)=(-math.pi, math.pi),
+        x_offset: float=None, y_offset: float=None, z_offset: float=None
     ):
         poses = []
         for i in range(self.cfg.num_syn):
@@ -55,7 +56,10 @@ class DatasetMaker:
                 azi_range=azi_range,
                 roll_range=roll_range,
                 pitch_range=pitch_range,
-                yaw_range=yaw_range
+                yaw_range=yaw_range,
+                x_offset=x_offset,
+                y_offset=y_offset,
+                z_offset=z_offset
             )
             poses.append(pose)
         poses = np.array(poses)
@@ -89,6 +93,7 @@ class DatasetMaker:
         roll_range: (float, float)=(-math.pi/36, math.pi/36),
         pitch_range: (float, float)=(-math.pi/36, math.pi/36),
         yaw_range: (float, float)=(-math.pi/36, math.pi/36),
+        x_offset: float=None, y_offset: float=None, z_offset: float=None,
         show_init_pbar: bool=True
     ):
         init_pbar = tqdm(total=6, unit='step(s)') if show_init_pbar else None
@@ -112,7 +117,10 @@ class DatasetMaker:
             azi_range=azi_range,
             roll_range=roll_range,
             pitch_range=pitch_range,
-            yaw_range=yaw_range
+            yaw_range=yaw_range,
+            x_offset=x_offset,
+            y_offset=y_offset,
+            z_offset=z_offset
         )
         if init_pbar is not None:
             init_pbar.update()
