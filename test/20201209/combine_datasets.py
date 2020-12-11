@@ -9,16 +9,23 @@ darwin_dataset.set_dataroot('/home/clayton/workspace/prj/data/misc_dataset/darwi
 darwin_dataset.set_images_dir('/home/clayton/workspace/prj/data/misc_dataset/darwin_datasets/nihonbashi2/organized')
 datasets.append(darwin_dataset)
 
+for dataset in datasets:
+    for category in dataset.categories:
+        category.name = 'hsr'
+        category.supercategory = 'hsr'
+    for ann in dataset.annotations:
+        ann.class_name = 'hsr'
+
 combined_dataset = Linemod_Dataset.combine(datasets, show_pbar=True)
 combined_dataset.move(
     dst_dataroot='combined',
     include_depth=True,
-    include_RT=True,
+    include_RT=False,
     camera_path=f'{datasets[0].annotations[0].data_root}/camera.txt',
     fps_path=f'{datasets[0].annotations[0].data_root}/fps.txt',
     preserve_filename=False,
-    use_softlink=True,
+    use_softlink=False,
     ask_permission_on_delete=True,
     show_pbar=True
 )
-combined_dataset.save_to_path('combined/train.json', overwrite=True)
+combined_dataset.save_to_path('combined/output.json', overwrite=True)
