@@ -3,21 +3,23 @@ import numpy as np
 from pvnet_rendering.util.blenderproc import linemod_from_blenderproc
 from annotation_utils.coco.structs import COCO_Dataset
 from common_utils.file_utils import make_dir_if_not_exists, delete_all_files_in_dir
+from common_utils.path_utils import get_rootname_from_filename
 
-img_dir = '/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20201223/output/coco_data_hospital_round'
-ann_path = f'{img_dir}/coco_annotations.json'
+img_dir = '/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20210105'
+img_dir0 = '/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20201223/output/coco_data'
+ann_path = f'{img_dir0}/new_coco_annotations3.json'
 K = np.array([517.799858, 0.000000, 303.876287, 0.000000, 514.807834, 238.157119, 0.000000, 0.000000, 1.000000]).reshape(3,3)
 obj_positions = np.loadtxt('/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20201223/obj_positions')
 camera_positions = np.loadtxt('/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20201223/camera_positions')
 fps_3d = np.loadtxt('/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20201223/fps.txt')
 corner_3d = np.loadtxt('/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/darwin20201223/corner3d.txt')
 
-
-dst_dir = 'conversion_dst'
+dst_root = '/home/clayton/workspace/prj/data_keep/data/misc_dataset/darwin_datasets/coco2linemod'
+dst_dir = f'{dst_root}/conversion_dst'
 make_dir_if_not_exists(dst_dir)
 delete_all_files_in_dir(dst_dir, ask_permission=False)
 
-coco_dataset = COCO_Dataset.load_from_path(ann_path, img_dir=img_dir, strict=False)
+coco_dataset = COCO_Dataset.load_from_path(ann_path, img_dir=img_dir0, strict=False)
 coco_dataset.images.sort(attr_name='file_name')
 src_img_paths = []
 seg_list = []
@@ -26,7 +28,8 @@ for coco_image in coco_dataset.images:
     assert len(anns) == 1, f"len(anns) == {len(anns)} != 1 for image_id={coco_image.id}"
     ann = anns[0]
     assert '/' not in coco_image.file_name
-    src_img_paths.append(f'{img_dir}/{coco_image.file_name}')
+    # src_img_paths.append(f'{img_dir}/{coco_image.file_name}')
+    src_img_paths.append(f'{img_dir}/{get_rootname_from_filename(coco_image.file_name)}.png')
     seg_list.append(ann.segmentation)
 
 linemod_dataset = linemod_from_blenderproc(
@@ -43,7 +46,7 @@ linemod_dataset = linemod_from_blenderproc(
 linemod_dataset.save_to_path(f'{dst_dir}/output.json', overwrite=True)
 coco_dataset0 = linemod_dataset.to_coco()
 coco_dataset0.save_to_path(f'{dst_dir}/coco.json', overwrite=True)
-coco_dataset0.save_video(save_path='sample.avi', fps=5, show_details=True, overwrite=True)
+coco_dataset0.save_video(save_path=f'{dst_root}/sample.avi', fps=5, show_details=True, overwrite=True)
 linemod_dataset.set_dataroot(dataroot='data/custom')
 linemod_dataset.set_images_dir(img_dir='data/custom')
 linemod_dataset.save_to_path(f'{dst_dir}/train.json', overwrite=True)
